@@ -4,24 +4,51 @@ use axum::{
     Json, body::Body, extract::{ Path, State}, response:: Response
 };
 use serde_json::{json, Value};
-
+use jsonschema;
 
 pub async fn registeruser(
-    State(db): State<Database>
+    State(db): State<Database>,
+    body: String
 )
 -> Response<Body> {
+    use serde_json::{json, Value};
+use jsonschema;
+ let schema = json!({
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "minLength": 8,
+      "pattern": "^[A-Za-z0-9]{8,}$"
+    },
+    "password": {
+      "type": "string",
+      "minLength": 8,
+      "pattern": "^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])\\S{8,}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z ]+$"
+    }
+  },
+  "required": ["username", "password", "name"],
+  "additionalProperties": false
+});
+ let instance = json!(body);
+ 
+let val = jsonschema::is_valid(&schema, &instance);
+println!("json schema  {}",val);
         let coll: Collection<User> = db.collection("users");
         println!("inside register user {:?}", db);
+       
         let mut status_code = 200;
-        let mut body = String::from("");
-    match coll.insert_one(User { name: "Bob".into(), age: 25 }, None).await{
-        Ok(val) => {
-            status_code = 200;
-            body = String::from("Ok done");
-        },
+        let mut body = String::from("done");
+    match coll.insert_one(User {username: "raster".to_string(),password: "passcode".to_string(), name: "name is name".to_string()}, None).await{
+        Ok(_) => {},
         Err(e) => {
             status_code = 500;
-            body = String::from("Error {:?}");
+            body = String::from(e.to_string());
         }
     }
 
